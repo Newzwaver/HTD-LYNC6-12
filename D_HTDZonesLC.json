@@ -1,0 +1,1268 @@
+{
+    "default_icon": "http://www.htd.com/c.589892/HTD/img/HTD_logo_w.png",
+    "x": "2",
+    "y": "4",
+    "imgIconBody": "",
+    "imgIconDimmable": "",
+    "imgIconTurnable": "",
+    "imgIconMin": "",
+    "imgIconMax": "",
+    "halloIconsDir": "pics/hallo",
+    "inScene": "1",
+    "doc_url": {
+        "doc_language": 1,
+        "doc_manual": 1,
+        "doc_version": 1,
+        "doc_platform": 0,
+        "doc_page": "devices"
+    },
+    "ToggleButton": 1,
+    "Tabs": [
+        {
+            "Label": {
+                "lang_tag": "tabname_control",
+                "text": "Control"
+            },
+            "Position": "0",
+            "TabType": "flash",
+            "SceneGroup": [
+                {
+                    "id": "1",
+                    "top": "1",
+                    "left": "0",
+                    "x": "2",
+                    "y": "1"
+                }
+            ],
+            "ControlGroup": [
+                {
+                    "id": "1",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                },
+                {
+                    "id": "2",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                },
+                {
+                    "id": "3",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                },
+                {
+                    "id": "4",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                },
+                {
+                    "id": "5",
+                    "isSingle": "1",
+                    "scenegroup": "1"
+                }
+            ],
+            "Control": [
+                {
+                    "ControlGroup": "1",
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "cmd_off",
+                        "text": "Off"
+                    },
+                    "top": "0",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:SwitchPower1",
+                        "Variable": "Status",
+                        "Value": "0",
+                        "Top": 60,
+                        "Left": 10,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:DiscretePower1",
+                        "Action": "Off",
+                        "Parameters": [
+                            {
+                                "Name": "newTargetValue",
+                                "Value": "0"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "ControlGroup": "2",
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "cmd_on",
+                        "text": "On"
+                    },
+                    "top": "0",
+                    "left": "1",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:SwitchPower1",
+                        "Variable": "Status",
+                        "Value": "1",
+                        "Top": 60,
+                        "Left": 100,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:DiscretePower1",
+                        "Action": "On",
+                        "Parameters": [
+                            {
+                                "Name": "newTargetValue",
+                                "Value": "1"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "ControlType": "variable",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Variable": "Input",
+                        "Top": 40,
+                        "Left": 160,
+                        "Width": 200,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "device_control_page",
+                        "text": "Volume:"
+                    },
+                    "Display": {
+                        "Top": 95,
+                        "Left": 10,
+                        "Width": 120,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlGroup": "2",
+                    "ControlHeader": "1",
+                    "ControlType": "slider",
+                    "top": "0",
+                    "left": "0",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:Volume1",
+                        "Variable": "Volume",
+                        "ID": "Volume",
+                        "MinValue": "0",
+                        "MaxValue": "60",
+                        "Top": 120,
+                        "Left": 15,
+                        "Width": 200,
+                        "Height": 30
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:Volume2",
+                        "Action": "SetVolume",
+                        "Parameters": [
+                            {
+                                "Name": "newTargetValue",
+                                "ID": "Volume"
+                            }
+                        ]
+                    }
+               },
+                {
+                    "ControlGroup": "3",
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "volume_down",
+                        "text": "- Volume"
+                    },
+                    "top": "1",
+                    "Display": {
+                        "Top": 60,
+                        "Left": 190,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:Volume1",
+                        "Action": "Down",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlGroup": "4",
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "volume_up",
+                        "text": "+ Volume"
+                    },
+                    "top": "1",
+                    "left": "1",
+                    "Display": {
+                        "Top": 60,
+                        "Left": 280,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:Volume1",
+                        "Action": "Up",
+                        "Parameters": []
+                    }
+                  },
+                {
+			 "ControlGroup": "5",
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "mute",
+                        "text": "Mute On"
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:SwitchMute",
+                        "Variable": "Status",
+                        "Value": "1",
+                        "Top": 145,
+                        "Left": 10,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:Volume2",
+                        "Action": "MuteOn",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlGroup": "5",
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "mute",
+                        "text": "Mute Off"
+                    },
+                    "Display": {
+                    "Service": "urn:micasaverde-com:serviceId:SwitchMute",
+                    "Variable": "Status",
+                    "Value": "0",
+                        "Top": 145,
+                        "Left": 100,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:Volume2",
+                        "Action": "MuteOff",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "lblMsg",
+                        "text": "Display:"
+                    },
+                    "Display": {
+                        "Top": 85,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlGroup": "6",
+                    "ControlType": "variable",
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSecection1",
+                        "Variable": "Display",
+                        "Top": 10,
+                        "Left": 160,
+                        "Width": 300,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "lblMsg",
+                        "text": "Volume:"
+                    },
+                    "Display": {
+                        "Top": 25,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    }
+                },
+            {
+               "ControlGroup":"7",
+               "ControlType":"label",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Label":{
+                  "lang_tag":"Discreteinput",
+                  "text":"Firmware: "
+               },
+               "Display":{
+                  "Top":10,
+                  "Left":230,
+                  "Width":75,
+                  "Height":20
+               }
+            },
+            {
+               "ControlGroup":"7",
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:upnp-org:serviceId:HTDRenderingControl1",
+                  "Variable":"Discreteinput",
+                  "Top":10,
+                  "Left":310,
+                  "Width":75,
+                  "Height":20
+               }
+            },
+            {
+               "ControlGroup":"7",
+               "ControlType":"label",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Label":{
+                  "lang_tag":"DiscreteinputCDR",
+                  "text":"Song Name: "
+               },
+               "Display":{
+                  "Top":25,
+                  "Left":230,
+                  "Width":75,
+                  "Height":20
+               }
+            },
+            {
+               "ControlGroup":"7",
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:upnp-org:serviceId:HTDRenderingControl1",
+                  "Variable":"DiscreteinputCDR",
+                  "Top":25,
+                  "Left":310,
+                  "Width":75,
+                  "Height":20
+               }
+			   
+            },
+            {
+               "ControlGroup":"7",
+               "ControlType":"label",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Label":{
+                  "lang_tag":"vvalue",
+                  "text":"Artist Name:"
+               },
+               "Display":{
+                  "Service": "urn:upnp-org:serviceId:HTDRenderingControl1",
+                  "Variable": "vvalue",
+				  "Top":40,
+                  "Left":230,
+                  "Width":75,
+                  "Height":20
+               }
+            },
+{
+                    "ControlType": "variable",
+                    "Display": {
+                        "Service": "urn:upnp-org:serviceId:HTDRenderingControl1",
+                        "Variable": "vvalue",
+                        "Top": 40,
+                        "Left": 310,
+                        "Width": 70,
+                        "Height": 20
+                    }
+                },				
+                {
+                    "ControlGroup": "7",
+                    "ControlType": "variable",
+                    "Display": {
+                        "Service": "urn:upnp-org:serviceId:HTDRenderingControl1",
+                        "Variable": "Input",
+                        "Top": 25,
+                        "Left": 80,
+                        "Width": 70,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "label",
+                    "Label": {
+                        "lang_tag": "lblMsg",
+                        "text": "Set Volume:"
+                    },
+                    "Display": {
+                        "Top": 40,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "input",
+                    "ID": "Volume",
+                    "Display": {
+                        "Top": 40,
+                        "Left": 80,
+                        "Width": 20,
+                        "Height": 20
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "lblMsg",
+                        "text": "Set"
+                    },
+                    "Display": {
+                        "Service": "urn:upnp-org:serviceId:HTDRenderingControl1",
+                        "Variable": "Volume",
+                        "Top": 40,
+                        "Left": 110,
+                        "Width": 30,
+                        "Height": 16
+                    },
+                    "Command": {
+                        "Service": "urn:upnp-org:serviceId:HTDRenderingControl1",
+                        "Action": "SetVolume",
+                        "Parameters": [
+                            {
+                                "Name": "DesiredVolume",
+                                "ID": "Volume"
+                            }
+                        ]
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "MP3LOOPON",
+                        "text": "MP3LON"
+                    },
+                    "Display": {
+                        "Top": 170,
+                        "Left": 10,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:MediaNavigation1",
+                        "Action": "ChapterDown",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "MP3LOOPOFF",
+                        "text": "MP3LOFF"
+                    },
+                    "Display": {
+                        "Top": 170,
+                        "Left": 100,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:MediaNavigation1",
+                        "Action": "ChapterUp",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "play",
+                        "text": "Play"
+                    },
+                    "Display": {
+                        "Top": 170,
+                        "Left": 190,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:MediaNavigation1",
+                        "Action": "Play",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "pause",
+                        "text": "Pause"
+                    },
+                    "Display": {
+                        "Top": 170,
+                        "Left": 280,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:MediaNavigation1",
+                        "Action": "Pause",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "stop",
+                        "text": "Stop"
+                    },
+                    "Display": {
+                        "Top": 170,
+                        "Left": 370,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:MediaNavigation1",
+                        "Action": "Stop",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "next",
+                        "text": "Next"
+                    },
+                    "Display": {
+                        "Top": 170,
+                        "Left": 460,
+                        "Width": 70,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:MediaNavigation1",
+                        "Action": "FastForward",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input1",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "0",
+                        "Top": 200,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input1",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source",
+                  "Top":200,
+                  "Left":10,
+                  "Width":75,
+                  "Height":20
+               }
+					
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input2",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "1",
+                        "Top": 200,
+                        "Left": 100,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input2",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source2",
+                  "Top":200,
+                  "Left":100,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input3",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "2",
+                        "Top": 200,
+                        "Left": 190,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input3",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source3",
+                  "Top":200,
+                  "Left":190,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input4",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "3",
+                        "Top": 200,
+                        "Left": 280,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input4",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source4",
+                  "Top":200,
+                  "Left":280,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input5",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "4",
+                        "Top": 200,
+                        "Left": 370,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input5",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source5",
+                  "Top":200,
+                  "Left":370,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input6",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "5",
+                        "Top": 235,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input6",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source6",
+                  "Top":235,
+                  "Left":10,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input7",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "6",
+                        "Top": 235,
+                        "Left": 100,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input7",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source7",
+                  "Top":235,
+                  "Left":100,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input8",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "7",
+                        "Top": 235,
+                        "Left": 190,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source8",
+                  "Top":235,
+                  "Left":190,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input9",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "8",
+                        "Top": 235,
+                        "Left": 280,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input9",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source9",
+                  "Top":235,
+                  "Left":280,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input10",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "9",
+                        "Top": 235,
+                        "Left": 370,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input10",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source10",
+                  "Top":235,
+                  "Left":370,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input11",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "10",
+                        "Top": 270,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input11",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source11",
+                  "Top":270,
+                  "Left":10,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input12",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "11",
+                        "Top": 270,
+                        "Left": 100,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input12",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source12",
+                  "Top":270,
+                  "Left":100,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input13",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "12",
+                        "Top": 270,
+                        "Left": 190,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input13",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source13",
+                  "Top":270,
+                  "Left":190,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input14",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "13",
+                        "Top": 270,
+                        "Left": 280,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input14",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source14",
+                  "Top":270,
+                  "Left":280,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input15",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "14",
+                        "Top": 270,
+                        "Left": 370,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input15",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source15",
+                  "Top":270,
+                  "Left":370,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input16",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "15",
+                        "Top": 305,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input16",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source16",
+                  "Top":305,
+                  "Left":10,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input17",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "16",
+                        "Top": 305,
+                        "Left": 100,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input17",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source17",
+                  "Top":305,
+                  "Left":100,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "Input18",
+                        "text": ""
+                    },
+                    "Display": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1LC",
+                        "Variable": "Input",
+                        "Value": "17",
+                        "Top": 305,
+                        "Left": 190,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "Input18",
+                        "Parameters": []
+                    }
+					},				
+            {
+               "ControlType":"variable",
+               "top":"0",
+               "left":"0",
+			   "text_align": "left",
+               "Display":{
+                  "Service":"urn:micasaverde-com:serviceId:InputSelection1",
+                  "Variable":"Source18",
+                  "Top":305,
+                  "Left":190,
+                  "Width":75,
+                  "Height":20
+               }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "DiscreteinputMD",
+                        "text": "DND On"
+                    },
+                    "Display": {
+ 				"Service": "urn:micasaverde-com:serviceId:SwitchDND",
+                    	"Variable": "Status",
+
+                        "Value": "1",
+                        "Top": 335,
+                        "Left": 10,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "DiscreteinputMD",
+                        "Parameters": []
+                    }
+                },
+                {
+                    "ControlType": "button",
+                    "Label": {
+                        "lang_tag": "DiscreteinputLD",
+                        "text": "DND Off"
+                    },
+                    "Display": {
+ 				"Service": "urn:micasaverde-com:serviceId:SwitchDND",
+                    	"Variable": "Status",
+                        "Value": "0",
+                        "Top": 335,
+                        "Left": 100,
+                        "Width": 75,
+                        "Height": 20
+                    },
+                    "Command": {
+                        "Service": "urn:micasaverde-com:serviceId:InputSelection1",
+                        "Action": "DiscreteinputLD",
+                        "Parameters": []
+                    }
+                }
+            ]
+        },
+        {
+            "Label": {
+                "lang_tag": "settings",
+                "text": "Settings"
+            },
+            "Position": "1",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "simple_device"
+        },
+        {
+            "Label": {
+                "lang_tag": "advanced",
+                "text": "Advanced"
+            },
+            "Position": "2",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "advanced_device"
+        },
+        {
+            "Label": {
+                "lang_tag": "ui7_logs",
+                "text": "Logs"
+            },
+            "Position": "3",
+            "TabType": "javascript",
+            "ScriptName": "shared.js",
+            "Function": "device_logs"
+			}
+    ],
+    "DeviceType": "urn:schemas-micasaverde-com:device:HTDZoneLC:1"
+}

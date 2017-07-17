@@ -1,0 +1,1447 @@
+<?xml version="1.0"?>
+<implementation>
+  <settings>
+    <protocol>raw</protocol>
+  </settings>
+  <functions>
+  ---------------------------------------------------------------------------------------------------------------------------------
+  -- Version 1.0 
+  -- Thanks to everyone that created the following plugins, sony, rnet, kodi.  Thanks to the HTD team for the API and support
+  ---------------------------------------------------------------------------------------------------------------------------------
+  local socket = require("socket")
+  local HTD_cmd_start = "02"
+  local HTD_cmd_end = "7F"
+  local HTD_VOL_end = "12"
+  local buffer = ""
+  local bufferString = ""
+  local zone_ID = {}
+  local cmdString = {}
+  local zonedev = ""
+  local BAUD_RATE = "38400"
+  local IP_PORT = "10006"
+  host = luup.attr_get('ip', lul_device)
+  c = assert(socket.connect(host, IP_PORT))
+ 
+  function lug_startup(lul_device)
+    local HTD_SID = "urn:micasaverde-com:serviceId:HTDLC1"
+    local lul_ID = luup.variable_get(HTD_SID, "ZoneIds", lul_device)
+    if (lul_ID == nil) then
+      lul_ID = "01,02,03,04,05,06,07,08,09,10,11,12"
+      luup.variable_set(HTD_SID, "ZoneIds", lul_ID, lul_device)
+    end
+ 
+    local lul_prefix = luup.variable_get(HTD_SID, "UrtsiId", lul_device)
+    if (lul_prefix == nil) then
+      lul_prefix = "01"
+      luup.variable_set(HTD_SID, "UrtsiId", lul_prefix, lul_device)
+    end
+ 
+    luup.log("Zone ID is " .. lul_ID .. " prefix is " .. lul_prefix)
+  
+    if (luup.io.is_connected(lul_device) == false) then
+      luup.log('No port for HTD', 1)
+      luup.task('Choose the Serial Port for the URTSI',2,'HTD Interface', -1)
+      return false
+    end
+ 
+    child_devices = luup.chdev.start(lul_device);
+    for i = 1,12 do
+      s = string.format("%02d", i)
+      if (string.find (lul_ID,s) ~= nil) then
+        luup.log("Adding audio zone " .. s)
+        luup.chdev.append(lul_device, child_devices, s, "Lync Audio Zone #" .. s, "urn:schemas-micasaverde-com:device:HTDZoneLC:1", "D_HTDZonesLC.xml", "", "", false)
+      end
+    end
+
+	luup.chdev.sync(lul_device, child_devices)
+
+    -- Find and store child devices
+    for k, v in pairs(luup.devices) do
+      if v.device_num_parent == luup.device then
+        t = tonumber(v.id)
+        zone_ID[t] = k
+        luup.log("HTD Lync Audio Zone " .. t .. " is device ID " .. k)
+      end
+    end
+  end
+    
+  function makeCommand(cmdString)
+    local chksum = #cmdString
+    local cmdstr = ""
+    for i = 1,#cmdString do
+      cmdstr = cmdstr .. string.char(cmdString[i])
+      chksum = chksum + cmdString[i]
+    end
+    return cmdstr .. string.char(chksum)
+  end
+  
+  function sendCommand(command)
+	local cmd = command
+      local startTime, endTime
+      startTime = socket.gettime()
+      if (luup.io.write(cmd) == false) then
+        luup.log("Cannot send command " .. command .. " communications error", 1)
+        luup.set_failure(true)
+        return false
+      end
+      endTime = socket.gettime()
+      luup.log("Request returned in " .. math.floor((endTime - startTime) * 1000) .. "ms")
+
+      return true
+  end
+
+  </functions>
+  <incoming>
+    <lua>
+	local data = string.format('%02X', string.byte(lul_data))
+	
+	-- Build full hex strings
+    if (data == HTD_cmd_end) then
+	  bufferString = buffer .. " " .. data
+-- luup.log("Received full buffer from controller via serial " .. bufferString) 
+    elseif (data == HTD_cmd_start) then
+      buffer = data
+	  	  bufferString = buffer
+-- luup.log("Part buffer from start statement " .. bufferString) 
+    else
+      buffer = buffer .. " " .. data
+	  bufferString = buffer .. " " .. data
+ luup.log("Part buffer from else statement " .. bufferString) 
+-- luup.log("Array " .. #Array)
+	  if (#Array == 24 ) then 
+	  HTD_cmd_end = "7F"
+	  end
+	end
+	
+	-- Generate array from buffer
+	if (bufferString ~= nil) then
+	  Array = {}
+	  local x = 1
+	  for i in string.gmatch(bufferString, "%S+") do
+	    Array[x] = i
+	    x = x + 1
+	  end
+	end
+	
+		-- Displays Source Names
+	if ((Array[4] == "0E") and (Array[3] == "01")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[2] == "0E") and (Array[1] == "02")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 3,15 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source2 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "03")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source3 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	if ((Array[4] == "0E") and (Array[3] == "04")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source4 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "05")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source5 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+
+	if ((Array[4] == "0E") and (Array[3] == "06")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source6 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "07")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source7 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	if ((Array[4] == "0E") and (Array[3] == "08")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source8 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "09")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source9 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "0A")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source10 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "0B")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source11 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	if ((Array[4] == "0E") and (Array[3] == "0C")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source12 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "0D")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source13 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+
+	if ((Array[4] == "0E") and (Array[3] == "0E")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source14 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "0F")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source15 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	if ((Array[4] == "0E") and (Array[3] == "10")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source16 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if ((Array[4] == "0E") and (Array[3] == "11")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source17 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+		
+	if ((Array[4] == "0E") and (Array[3] == "12")) then
+		local keypadString = ""
+		local bufferString = ""
+			for h = 5,17 do
+			bufferString = string.char(tonumber(Array[h], 16))
+		--	if (bufferString ~= nil) then end
+			keypadString = keypadString .. string.char(tonumber(Array[h], 16))
+			end
+		local Source18 = keypadString
+		luup.log("Source " .. keypadString)		
+		bufferString = ""
+		keypadString = ""
+		Array = {}
+	end
+	
+	if (Array[4] == "10") then  
+		if ((Array[18] == "30") and (Array[19] == "38")and (Array[20] == "2E") ) then
+		-- Firmware status Working to screen
+		fname = "08.3e"
+		Discreteinput = fname
+		elseif (Discreteinput == nil) then 
+		Discreteinput = "NA"
+	end
+	end
+		-- Display source string
+	if (Array[4] == "12") then
+  	local sourceString = ""
+	for n = 5,24 do
+	  	bufferString = string.char(tonumber(Array[n], 16))
+		if (bufferString ~= nil) then end
+  		sourceString = sourceString .. string.char(tonumber(Array[n], 16))
+		end
+	vvalue = sourceString
+	luup.log("Source string is " .. sourceString)
+	bufferString = ""
+	  keypadString = ""
+	  Array = {}
+	end
+	-- Display keypad messages  
+	if (Array[4] == "11") then
+	  local keypadString = ""
+	  for h = 5,6 do
+	  	bufferString = string.char(tonumber(Array[h], 16))
+		if (bufferString ~= nil) then end
+		keypadString = keypadString .. string.char(tonumber(Array[h], 16))	  	
+		end
+	  luup.log("Keypad string is " .. keypadString)
+	  DiscreteinputCDR = keypadString
+	  bufferString = ""
+	  keypadString = ""
+	  Array = {}
+	end
+	if ((Array[1] == "02") and (Array[2] == "05") and (Array[3] == "80"))  then
+	value = tonumber(Array[8], 16) - 196
+	zonedev = zone_ID[tonumber(Array[1], 16)]
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchPower1", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:Volume1", "Volume", value, zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if ((Array[1] == "02") and (Array[2] == "05") and (Array[3] == "81"))  then
+	Input = (tonumber(Array[7], 16))
+   	zonedev = zone_ID[tonumber(Array[1], 16)]
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	value = tonumber(Array[8], 16) - 196
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchPower1", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:Volume1", "Volume", value, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if ((Array[1] == "02") and (Array[2] == "05") and (Array[3] == "83"))  then
+	zonedev = zone_ID[tonumber(Array[1], 16)]
+	-- mute on dnd off
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if ((Array[1] == "02") and (Array[2] == "05") and (Array[3] == "85"))  then
+	zonedev = zone_ID[tonumber(Array[1], 16)]
+	-- mute on dnd on
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if ((Array[1] == "02") and (Array[2] == "05") and (Array[3] == "87"))  then
+	zonedev = zone_ID[tonumber(Array[1], 16)]
+	-- mute off dnd on
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+
+	if ((Array [4]== "05") or (#Array == 24)) then  
+	-- Return state status on zones 
+	if ((Array[5] == "81") or (Array[5] == "80" )  or (Array[5] == "83") or (Array[5] == "85" ) or (Array[5] == "87")) then
+	if (Array[5] == "80") then
+	value = tonumber(Array[10], 16) - 196
+	zonedev = zone_ID[tonumber(Array[3], 16)]
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchPower1", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:Volume1", "Volume", value, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	end
+	if (Array[5] == "81") then
+	Input = (tonumber(Array[9], 16))
+   	zonedev = zone_ID[tonumber(Array[3], 16)]
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	value = tonumber(Array[10], 16) - 196
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchPower1", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:Volume1", "Volume", value, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if (Array[5] == "83") then
+	zonedev = zone_ID[tonumber(Array[3], 16)]
+	-- mute on dnd off
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "0", zonedev)
+ 	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", InputMuteOFF, zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", InputDND, zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if (Array[5] == "85") then
+	zonedev = zone_ID[tonumber(Array[3], 16)]
+	-- mute on dnd on
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "0", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	if (Array[5] == "87") then
+	zonedev = zone_ID[tonumber(Array[3], 16)]
+	-- mute off dnd on
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchMute", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:SwitchDND", "Status", "1", zonedev)
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1LC", "Input", Input, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "Discreteinput", Discreteinput, zonedev)
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "vvalue", vvalue, zonedev)	
+	luup.variable_set("urn:upnp-org:serviceId:HTDRenderingControl1", "DiscreteinputCDR", DiscreteinputCDR, zonedev)
+	end
+	end
+	end
+	
+	if (Source == nil) then
+	Source = "Source 1"
+	end
+	if (Source2 == nil) then
+	Source = "Source 2"
+	end
+	if (Source3 == nil) then
+	Source = "Source 3"
+	end
+if (Source4 == nil) then
+	Source = "Source 4"
+	end
+	if (Source5 == nil) then
+	Source = "Source 5"
+	end
+	if (Source6 == nil) then
+	Source = "Source 6"
+	end
+	if (Source7 == nil) then
+	Source = "Source 7"
+	end
+	if (Source8 == nil) then
+	Source = "Source 8"
+	end
+	if (Source9 == nil) then
+	Source = "Source 9"
+	end
+if (Source10 == nil) then
+	Source = "Source 10"
+	end
+	if (Source11 == nil) then
+	Source = "Source 11"
+	end
+	if (Source12 == nil) then
+	Source = "Source 12"
+	end
+	if (Source13 == nil) then
+	Source = "Source 13"
+	end
+	if (Source14 == nil) then
+	Source = "Source 14"
+	end
+	if (Source15 == nil) then
+	Source = "Source 15"
+	end
+	if (Source16 == nil) then
+	Source = "Source 16"
+	end
+if (Source17 == nil) then
+	Source = "Source 17"
+	end
+	if (Source11 == nil) then
+	Source = "MP3 Player"
+	end
+	if (Source19 == nil) then
+	Source = "Intercom"
+	end	
+	luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source", Source, zonedev)
+  
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source2", Source2, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source3", Source3, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source4", Source4, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source5", Source5, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source6", Source6, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source7", Source7, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source8", Source8, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source9", Source9, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source10", Source10, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source11", Source11, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source12", Source12, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source13", Source13, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source14", Source14, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source15", Source15, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source16", Source16, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source17", Source17, zonedev)
+	  luup.variable_set("urn:micasaverde-com:serviceId:InputSelection1", "Source18", Source18, zonedev)		
+--	end		
+	
+	
+
+	</lua>
+  </incoming>
+  <startup>lug_startup</startup>
+  <actionList>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:Misc1</serviceId>
+      <name>AllOn</name>
+       <run>
+        -- Power on all zones
+        cmdString = { 0x02, 0x00, 0x00, 0x04, 0x55, 0x5B }
+        sendCommand(makeCommand(cmdString))
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:Misc1</serviceId>
+      <name>AllOff</name>
+      <run>
+        -- Power off all zones
+        cmdString = { 0x02, 0x00, 0x00, 0x04, 0x56, 0x5C }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:Misc1</serviceId>
+      <name>Title</name>
+      <run>
+        -- Q Firmware
+		cmdString = { 0x02, 0x00, 0x00, 0x10, 0x00, 0x12 }
+        sendCommand(makeCommand(cmdString))
+        cmdString = { 0x02, 0x00, 0x00, 0x00, 0x0F, 0x11 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+	  <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+	  <name>SetSource</name>
+	  <run>
+	-- Set Source Names	
+	cmdString = { 0x02, 0x00, 0x01, 0x0E, 0x01, 0x12 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x01, 0x0E, 0x01, 0x12 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x02, 0x0E, 0x01, 0x13 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x02, 0x0E, 0x01, 0x13 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x03, 0x0E, 0x01, 0x14 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x03, 0x0E, 0x01, 0x14 }
+--   sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x04, 0x0E, 0x01, 0x15 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x04, 0x0E, 0x01, 0x15 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x05, 0x0E, 0x01, 0x16 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x05, 0x0E, 0x01, 0x16 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x06, 0x0E, 0x01, 0x17 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x06, 0x0E, 0x01, 0x17 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x07, 0x0E, 0x01, 0x18 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x07, 0x0E, 0x01, 0x18 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x08, 0x0E, 0x01, 0x19 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x08, 0x0E, 0x01, 0x19 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x09, 0x0E, 0x01, 0xA1 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x09, 0x0E, 0x01, 0xA1 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x0A, 0x0E, 0x01, 0xB1 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x0A, 0x0E, 0x01, 0xB1 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x0B, 0x0E, 0x00, 0xC1 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x0B, 0x0E, 0x00, 0xC1 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x0C, 0x0E, 0x00, 0xD1 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x0C, 0x0E, 0x00, 0xD1 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x0D, 0x0E, 0x00, 0xE1 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x0D, 0x0E, 0x00, 0xE1 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x0E, 0x0E, 0x00, 0xF1 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x0E, 0x0E, 0x00, 0xF1 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x0F, 0x0E, 0x00, 0x20 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x0F, 0x0E, 0x00, 0x20 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x10, 0x0E, 0x00, 0x21 }
+--    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x10, 0x0E, 0x00, 0x21 }
+    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x11, 0x0E, 0x00, 0x22 }
+    sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x11, 0x0E, 0x00, 0x22 }
+--    sendCommand(makeCommand(cmdString))
+	cmdString = { 0x02, 0x00, 0x12, 0x0E, 0x00, 0x23 }
+	sendCommand(makeCommand(cmdString))
+--	cmdString = { 0x02, 0x00, 0x12, 0x0E, 0x00, 0x23 }
+--	sendCommand(makeCommand(cmdString))
+	</run>
+	</action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:Misc1</serviceId>
+      <name>RecordMute</name>
+       <run>
+        -- Mute
+        local keyPad = luup.attr_get('altid', lul_device)
+        -- Send command
+	   		-- Mute Zone 1 On
+		cmdString = { 0x02, 0x00, 0x01, 0x04, 0x1E, 0x25 }
+        sendCommand(makeCommand(cmdString)) 
+		-- Mute Zone 2 On
+		cmdString = { 0x02, 0x00, 0x02, 0x04, 0x1E, 0x26 }
+        sendCommand(makeCommand(cmdString)) 
+		-- Mute Zone 3 On
+		cmdString = { 0x02, 0x00, 0x03, 0x04, 0x1E, 0x27 }
+        sendCommand(makeCommand(cmdString))    
+		-- Mute Zone 4 On
+		cmdString = { 0x02, 0x00, 0x04, 0x04, 0x1E, 0x28 }
+        sendCommand(makeCommand(cmdString)) 
+		-- Mute Zone 5 On
+		cmdString = { 0x02, 0x00, 0x05, 0x04, 0x1E, 0x29 }
+        sendCommand(makeCommand(cmdString)) 
+       -- Mute Zone 6 On
+		cmdString = { 0x02, 0x00, 0x06, 0x04, 0x1E, 0x2A }
+        sendCommand(makeCommand(cmdString)) 
+		-- Mute Zone 7 On
+		cmdString = { 0x02, 0x00, 0x07, 0x04, 0x1E, 0x2B }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 8 On
+		cmdString = { 0x02, 0x00, 0x08, 0x04, 0x1E, 0x2C }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 9 On
+		cmdString = { 0x02, 0x00, 0x09, 0x04, 0x1E, 0x2D }
+        sendCommand(makeCommand(cmdString))
+ 		-- Mute Zone 10 On
+		cmdString = { 0x02, 0x00, 0x0A, 0x04, 0x1E, 0x2E }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 11 On
+		cmdString = { 0x02, 0x00, 0x0B, 0x04, 0x1E, 0x2F }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 12 On
+		cmdString = { 0x02, 0x00, 0x0C, 0x04, 0x1E, 0x30 }
+        sendCommand(makeCommand(cmdString))
+      </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:Misc1</serviceId>
+      <name>PictureMute</name>
+        <run>
+        -- Mute
+        local keyPad = luup.attr_get('altid', lul_device)
+        -- Send command	
+		-- Mute Zone 1 Off
+		cmdString = {  0x02, 0x00, 0x01, 0x04, 0x1F, 0x26 }
+        sendCommand(makeCommand(cmdString))
+ 		-- Mute Zone 2 Off
+		cmdString = {  0x02, 0x00, 0x02, 0x04, 0x1F, 0x27 }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 3 Off
+		cmdString = {  0x02, 0x00, 0x03, 0x04, 0x1F, 0x28 }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 4 Off
+		cmdString = {  0x02, 0x00, 0x04, 0x04, 0x1F, 0x29 }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 5 Off
+		cmdString = {  0x02, 0x00, 0x05, 0x04, 0x1F, 0x2A }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 6 Off
+		cmdString = {  0x02, 0x00, 0x06, 0x04, 0x1F, 0x2B }
+        sendCommand(makeCommand(cmdString))
+ 		-- Mute Zone 7 Off
+		cmdString = {  0x02, 0x00, 0x07, 0x04, 0x1F, 0x2C }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 8 Off
+		cmdString = {  0x02, 0x00, 0x08, 0x04, 0x1F, 0x2D }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 9 Off
+		cmdString = {  0x02, 0x00, 0x09, 0x04, 0x1F, 0x2E }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 10 Off
+		cmdString = {  0x02, 0x00, 0x0A, 0x04, 0x1F, 0x2F }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 11 Off
+		cmdString = {  0x02, 0x00, 0x0B, 0x04, 0x1F, 0x30 }
+        sendCommand(makeCommand(cmdString))
+		-- Mute Zone 12 Off
+		cmdString = {  0x02, 0x00, 0x0C, 0x04, 0x1F, 0x31 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>	
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:DiscretePower1</serviceId>
+      <name>On</name>
+      <run>
+		-- Power On Zones
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- calculates check sum with variable 
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x57
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x57, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:MediaNavigation1</serviceId>
+      <name>ChapterUp</name>
+      <run>
+		-- MP3 Repeat Loop - ON
+		cmdString = { 0x02, 0x00, 0x00, 0x01, 0xFF, 0x102 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:MediaNavigation1</serviceId>
+      <name>ChapterDown</name>
+      <run>
+		-- MP3 Repeat Loop - OFF
+		cmdString = { 0x02, 0x00, 0x00, 0x01, 0x00, 0x03 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:MediaNavigation1</serviceId>
+      <name>FastForward</name>
+      <run>
+		-- MP3 Play Function - FF
+		cmdString = {  0x02, 0x00, 0x00, 0x04, 0x0A, 0x10 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:MediaNavigation1</serviceId>
+      <name>Pause</name>
+      <run>
+		-- MP3 Play Function - PP
+		cmdString = {  0x02, 0x00, 0x00, 0x04, 0x0B, 0x11  }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:MediaNavigation1</serviceId>
+      <name>Play</name>
+      <run>
+		-- MP3 Play Function - FB
+		cmdString = {  0x02, 0x00, 0x00, 0x04, 0x0C, 0x12 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:MediaNavigation1</serviceId>
+      <name>Stop</name>
+      <run>
+		-- MP3 Play Function - Stop
+		cmdString = {  0x02, 0x00, 0x00, 0x04, 0x0D, 0x13 }
+        sendCommand(makeCommand(cmdString))
+     </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:DiscretePower1</serviceId>
+      <name>Off</name>
+      <run>
+		-- Power Off Zones
+		local keyPad = luup.attr_get('altid', lul_device)
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x58
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x58, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+		<action>
+	<serviceId>urn:micasaverde-com:serviceId:Volume1</serviceId>
+    <name>Down</name>
+	  <run>
+	  	local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- calculates check sum with variable
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x05
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x05, chksums }
+		sendCommand(makeCommand(cmdString))	
+	  </run>
+	</action>
+	<action>
+	  <serviceId>urn:micasaverde-com:serviceId:Volume1</serviceId>
+	  <name>Up</name>
+	  <run>
+		local keyPad = luup.attr_get('altid', lul_device)
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums2 = 0x02 + 0x00 + KeyString + 0x04 + 0x04
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x04, chksums2 }
+		sendCommand(makeCommand(cmdString))
+		</run>
+	</action>
+	<action>
+	<serviceId>urn:micasaverde-com:serviceId:Volume2</serviceId>
+    <name>SetVolume</name>
+	  <run>
+		local keyPad = luup.attr_get('altid', lul_device)
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		newtttxxx = lul_settings.newTargetValue + 196
+		newttt = "0x" .. string.format( "%02x", newtttxxx )
+		luup.log("Volume is 123 " .. newttt )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x57
+		newchkcc = "0x" .. string.format( "%02x", chksums )
+		local chksums1 = 0x02 + 0x01 + KeyString + 0x15 + newttt
+		if chksums1 > 0xFF then 
+		chksums1 = chksums1 - 0x100
+		end
+        -- Volume Level = newttt
+     	local sres, serr = c:send(string.char(0x02,0x00,KeyString,0x04,0x57,newchkcc)) -- zone on
+		print("Send:", sres, serr)
+		local sres, serr = c:send(string.char(0x02,0x01,KeyString,0x15,newttt,chksums1)) -- volume
+		print("Send:", sres, serr)
+		local sres, serr = c:send(string.char(0x02,0x00,KeyString,0x04,0x57,newchkcc)) -- zone on
+		print("Send:", sres, serr)
+		local sres, serr = c:send(string.char(0x02,0x01,KeyString,0x15,newttt,chksums1)) -- volume
+		print("Send:", sres, serr)
+
+	  </run>
+	</action>
+	<action>
+	  <serviceId>urn:upnp-org:serviceId:HTDRenderingControl1</serviceId>
+	  <name>SetVolume</name>
+	  <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x57
+		newtttxxx = lul_settings.DesiredVolume + 196
+		newttt = "0x" .. string.format( "%02x", newtttxxx )
+--		luup.log("Volume is 123 " .. newttt )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x57
+		local chksums1 = 0x02 + 0x01 + KeyString + 0x15 + newttt
+		if chksums1 > 0xFF then 
+		chksums1 = chksums1 - 0x100
+		end
+		
+        -- Volume Level 
+     		local sres, serr = c:send(string.char(0x02,0x00,KeyString,0x04,0x57,chksums)) -- zone on
+		print("Send:", sres, serr)
+		local sres, serr = c:send(string.char(0x02,0x01,KeyString,0x15,newttt,chksums1)) -- volume
+		print("Send:", sres, serr)
+		local sres, serr = c:send(string.char(0x02,0x00,KeyString,0x04,0x57,chksums)) -- zone on
+		print("Send:", sres, serr)
+		local sres, serr = c:send(string.char(0x02,0x01,KeyString,0x15,newttt,chksums1)) -- volume
+		print("Send:", sres, serr)
+	</run>
+	</action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:Volume2</serviceId>
+      <name>MuteOn</name>
+        <run>
+		-- Mute Zone On
+		local keyPad = luup.attr_get('altid', lul_device)
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x1E
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x1E, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:Volume2</serviceId>
+      <name>MuteOff</name>
+        <run>
+		-- Mute Zone Off
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x1F
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x1F, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>	
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>DiscreteinputMD</name>
+      <run>
+        -- DND On Zone
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x59
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x59, chksums }
+		sendCommand(makeCommand(cmdString))
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>DiscreteinputLD</name>
+      <run>
+        -- DND Off
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x5A
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x5A, chksums }
+		sendCommand(makeCommand(cmdString))
+      </run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>Input1</name>
+      <run>
+        -- Source 1
+        local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x10
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x10,  chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>Input2</name>
+      <run>
+        -- Source 2
+        local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x11
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x11, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>Input3</name>
+      <run>
+        -- Source 3
+        local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x12
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x12, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>Input4</name>
+      <run>
+        -- Source 4
+         local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x13
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x13, chksums }
+		sendCommand(makeCommand(cmdString))
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>Input5</name>
+      <run>
+        -- Source 5
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x14
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x14, chksums }
+		sendCommand(makeCommand(cmdString))
+      </run>
+    </action>
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>Input6</name>
+        <run>
+        -- Source 6
+        local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x15
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x15, chksums }
+		sendCommand(makeCommand(cmdString))
+    </run>
+    </action>
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input7</name>
+    <run>
+        local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x16
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x16, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action> 
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input8</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x17
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x17, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input9</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x18
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x18, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action> 
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input10</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x19
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x19, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action> 
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input11</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x1A
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x1A, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action> 
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input12</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x1B
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x1B, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input13</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x63
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x63, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action> 
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input14</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x64
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x64, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action> 
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input15</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x65
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x65, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input16</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x66
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x66, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input17</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x67
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x67, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+    <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+    <name>Input18</name>
+    <run>
+		local keyCode = luup.attr_get('altid', lul_device)
+		KeyString = "0x" .. string.format( "%02x", keyCode )
+		-- This calculates check sum perfect.
+		local chksums = 0x02 + 0x00 + KeyString + 0x04 + 0x68
+		-- Send command
+		cmdString = { 0x02, 0x00, KeyString, 0x04, 0x68, chksums }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+
+    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode1</name>
+        <run>
+         -- Party Mode Source 1 \x02\x00\x01\x04\x36\x3D
+		 cmdString = { 0x02, 0x00, 0x01, 0x04, 0x36, 0x3D }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode2</name>
+        <run>
+         -- Party Mode Source 2 \x02\x00\x02\x04\x37\x3F
+		 cmdString = { 0x02, 0x00, 0x02, 0x04, 0x37, 0x3F }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode3</name>
+        <run>
+         -- Party Mode Source 3 \x02\x00\x03\x04\x38\x41
+		  cmdString = { 0x02, 0x00, 0x03, 0x04, 0x38, 0x41 }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode4</name>
+        <run>
+         -- Party Mode Source 4 \x02\x00\x04\x04\x39\x43 
+		   cmdString = { 0x02, 0x00, 0x04, 0x04, 0x39, 0x43 }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode5</name>
+        <run>
+         -- Party Mode Source 5 \x02\x00\x05\x04\x3A\x45
+		    cmdString = { 0x02, 0x00, 0x05, 0x04, 0x3A, 0x45 }
+		sendCommand(makeCommand(cmdString))
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode6</name>
+        <run>
+         -- Party Mode Source 6 \x02\x00\x06\x04\x3B\x47 
+		   cmdString = { 0x02, 0x00, 0x06, 0x04, 0x3B, 0x47 }
+		sendCommand(makeCommand(cmdString)) 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode7</name>
+        <run>
+         -- Party Mode Source 7 \x02\x00\x07\x04\x3C\x49
+   cmdString = { 0x02, 0x00, 0x07, 0x04, 0x3C, 0x49 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode8</name>
+        <run>
+         -- Party Mode Source 8 \x02\x00\x08\x04\x3D\x4B
+   cmdString = { 0x02, 0x00, 0x08, 0x04, 0x3D, 0x4B }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	    <action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode9</name>
+        <run>
+         -- Party Mode Source 9 \x02\x00\x09\x04\x3E\x4D
+   cmdString = { 0x02, 0x00, 0x09, 0x04, 0x3E, 0x4D }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode10</name>
+        <run>
+         -- Party Mode Source 10 \x02\x00\x0A\x04\x3F\x4F
+   cmdString = { 0x02, 0x00, 0x0A, 0x04, 0x3F, 0x4F }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode11</name>
+        <run>
+         -- Party Mode Source 11 \x02\x00\x0B\x04\x40\x51
+   cmdString = { 0x02, 0x00, 0x0B, 0x04, 0x40, 0x51 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode12</name>
+        <run>
+         -- Party Mode Source 12 \x02\x00\x0C\x04\x41\x53
+   cmdString = { 0x02, 0x00, 0x0C, 0x04, 0x41, 0x53 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode13</name>
+        <run>
+         -- Party Mode Source 13 \x02\x00\x0D\x04\x69\x7C
+   cmdString = { 0x02, 0x00, 0x0D, 0x04, 0x69, 0x7C }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode14</name>
+        <run>
+         -- Party Mode Source 14 \x02\x00\x0E\x04\x6A\x7E
+   cmdString = { 0x02, 0x00, 0x0E, 0x04, 0x6A, 0x7E }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode15</name>
+        <run>
+         -- Party Mode Source 15 \x02\x00\x0F\x04\x6B\x80
+   cmdString = { 0x02, 0x00, 0x0F, 0x04, 0x6B, 0x80 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode16</name>
+        <run>
+         -- Party Mode Source 16 \x02\x00\x10\x04\x6C\x82
+   cmdString = { 0x02, 0x00, 0x10, 0x04, 0x6C, 0x82 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode17</name>
+        <run>
+         -- Party Mode Source 17 \x02\x00\x10\x04\x6D\x83
+   cmdString = { 0x02, 0x00, 0x10, 0x04, 0x6D, 0x83 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+	<action>
+      <serviceId>urn:micasaverde-com:serviceId:InputSelection1</serviceId>
+      <name>PartyMode18</name>
+        <run>
+         -- Party Mode Source 18 \x02\x00\x10\x04\x6E\x84
+   cmdString = { 0x02, 0x00, 0x10, 0x04, 0x6E, 0x84 }
+		sendCommand(makeCommand(cmdString))		 
+	</run>
+    </action>
+  </actionList>
+</implementation>
